@@ -48,7 +48,8 @@ jobs:
           fetch-depth: 1
           lfs: false
           sparse-checkout: |
-            .maestro
+            android
+            subflows
             app
           sparse-checkout-cone-mode: true
 
@@ -78,10 +79,12 @@ jobs:
       - name: Zip and upload Maestro suite
         id: suite
         run: |
-          # BrowserStack needs ONE visible parent folder in the zip (not the hidden .maestro dir)
+          test -d android || { echo "::error::android/ folder not found in repo root"; ls -la; exit 1; }
           rm -rf suite && mkdir -p suite/flows
-          cp -R .maestro/android .maestro/subflows .maestro/config.yaml suite/flows/
+          cp -R android subflows config.yaml suite/flows/
           (cd suite && zip -qr flows.zip flows)
+          echo "Zip layout:"
+          unzip -l suite/flows.zip | head -40
           res=$(curl -sf -u "$BROWSERSTACK_USERNAME:$BROWSERSTACK_ACCESS_KEY" \
             -X POST "$API/test-suite" -F "file=@suite/flows.zip")
           url=$(echo "$res" | python3 -c 'import sys,json;print(json.load(sys.stdin)["test_suite_url"])')
