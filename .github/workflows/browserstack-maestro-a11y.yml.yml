@@ -1,3 +1,4 @@
+.github/workflows/browserstack-maestro-a11y.yml
 name: Maestro on BrowserStack App Automate (with App Accessibility)
 on:
   push:
@@ -30,7 +31,6 @@ concurrency:
 jobs:
   maestro-a11y:
     runs-on: ubuntu-latest
-    environment: GA
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
