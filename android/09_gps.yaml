@@ -1,0 +1,25 @@
+appId: com.demobank.app
+name: FR-9 GPS test reads the device location after allowing location
+tags: [device-feature, gps]
+# BrowserStack: set the GPS location capability (see RUNBOOK.md)
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_gps"
+- tapOn:
+    id: "standalone_item_gps"
+# Location permission dialog (shown on a fresh install) covers the screen first
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "GPS test"
+    timeout: 15000
+# Observed on device: hook_location_fetch is the status text on this screen and
+# the refresh button has no id.
+- extendedWaitUntil:
+    visible:
+      id: "hook_location_fetch"
+    timeout: 15000
+- tapOn: "Refresh GPS"

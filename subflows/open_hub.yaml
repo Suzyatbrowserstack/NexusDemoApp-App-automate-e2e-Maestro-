@@ -1,0 +1,21 @@
+appId: com.demobank.app
+---
+# Opens the Standalone demo hub from the domain picker (no login needed).
+# Observed on device: the Standalone demo card sits below the fold of the picker,
+# and the hub screen exposes its tiles (standalone_item_*), not standalone_hub_root.
+- launchApp:
+    clearState: true
+    permissions: { all: unset }
+- extendedWaitUntil:
+    visible:
+      id: "domain_selector_root"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      id: "domain_card_standalone"
+- tapOn:
+    id: "domain_card_standalone"
+- extendedWaitUntil:
+    visible:
+      id: "standalone_item_image"
+    timeout: 15000

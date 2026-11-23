@@ -1,0 +1,18 @@
+appId: com.demobank.app
+name: FR-4 File upload and sample PDF download
+tags: [device-feature, files]
+---
+- runFlow: ../subflows/open_hub.yaml
+- tapOn:
+    id: "standalone_item_files"
+- tapOn:
+    id: "hook_file_download"
+# Observed on device: the confirmation has no id; the file name carries a timestamp.
+- assertVisible: "Saved to Downloads: sample_lab_report_.*\\.pdf"
+- tapOn:
+    id: "hook_file_upload"
+# Observed on device: the picker opens on Recent with the downloaded PDF as the
+# first row (com.google.android.documentsui:id/item_root).
+- tapOn:
+    id: "com.google.android.documentsui:id/item_root"
+- assertVisible: "Uploaded: content://.*"

@@ -1,0 +1,25 @@
+appId: com.demobank.app
+name: FR-1 Image injection - capture still via injected camera image
+tags: [device-feature, camera]
+# BrowserStack: run with enableCameraMediaInjection + uploaded image (see RUNBOOK.md)
+---
+- runFlow: ../subflows/open_hub.yaml
+- tapOn:
+    id: "standalone_item_image"
+# Observed on device: hook_camera_capture is the "Open camera" button on the
+# first screen and the Capture button on the camera screen. hook_camera_preview
+# was never seen in the page source.
+- tapOn:
+    id: "hook_camera_capture"
+# Camera permission dialog (shown on a fresh install)
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible: "Capture"
+    timeout: 20000
+- tapOn:
+    id: "hook_camera_capture"
+- extendedWaitUntil:
+    visible: "Captured photo"
+    timeout: 10000

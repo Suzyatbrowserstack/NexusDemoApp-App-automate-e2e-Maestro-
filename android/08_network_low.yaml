@@ -1,0 +1,18 @@
+appId: com.demobank.app
+name: FR-8 2G/Edge is reported as low network (at or below 250 kbps)
+tags: [device-feature, network]
+# BrowserStack: start with networkProfile 2g-gprs-good or edge-good (see RUNBOOK.md)
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_network"
+- tapOn:
+    id: "standalone_item_network"
+- assertVisible: "Network logs \\+ throttling"
+# Observed on device under 2g-gprs-good: the status line, not a popup with ids,
+# reports the low network.
+- tapOn: "Fire network requests"
+- extendedWaitUntil:
+    visible: "Low network \\(.* kbps\\) — 2G / Edge popup"
+    timeout: 60000

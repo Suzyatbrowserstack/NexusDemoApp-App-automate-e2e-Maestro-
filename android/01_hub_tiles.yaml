@@ -1,0 +1,52 @@
+appId: com.demobank.app
+name: FR-0 Hub lists all 10 tiles and back returns to hub
+tags: [hub, smoke]
+---
+- runFlow: ../subflows/open_hub.yaml
+- assertVisible:
+    id: "standalone_item_image"
+- assertVisible:
+    id: "standalone_item_biometric"
+- assertVisible:
+    id: "standalone_item_video"
+- assertVisible:
+    id: "standalone_item_files"
+- assertVisible:
+    id: "standalone_item_audio"
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_barcode"
+- assertVisible:
+    id: "standalone_item_barcode"
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_geo"
+- assertVisible:
+    id: "standalone_item_geo"
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_network"
+- assertVisible:
+    id: "standalone_item_network"
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_gps"
+- assertVisible:
+    id: "standalone_item_gps"
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_otp"
+- assertVisible:
+    id: "standalone_item_otp"
+# Observed on device: the hub has an 11th tile, Deep link test
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_deeplink"
+- assertVisible:
+    id: "standalone_item_deeplink"
+# Back from a test returns to the hub (the hub exposes its tiles, not standalone_hub_root)
+- tapOn:
+    id: "standalone_item_deeplink"
+- back
+- assertVisible:
+    id: "standalone_item_deeplink"

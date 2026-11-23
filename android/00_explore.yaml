@@ -1,0 +1,60 @@
+appId: com.demobank.app
+name: EXPLORE Walk every hub tile and capture screenshots
+tags: [explore]
+---
+- runFlow: ../subflows/open_hub.yaml
+- takeScreenshot: hub_top
+- tapOn:
+    id: "standalone_item_image"
+- takeScreenshot: tile_image
+- back
+- tapOn:
+    id: "standalone_item_biometric"
+- takeScreenshot: tile_biometric
+- back
+- tapOn:
+    id: "standalone_item_video"
+- takeScreenshot: tile_video
+- back
+- tapOn:
+    id: "standalone_item_files"
+- takeScreenshot: tile_files
+- back
+- tapOn:
+    id: "standalone_item_audio"
+- takeScreenshot: tile_audio
+- back
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_barcode"
+- tapOn:
+    id: "standalone_item_barcode"
+- takeScreenshot: tile_barcode
+- back
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_geo"
+- tapOn:
+    id: "standalone_item_geo"
+- takeScreenshot: tile_geo
+- back
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_network"
+- tapOn:
+    id: "standalone_item_network"
+- takeScreenshot: tile_network
+- back
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_gps"
+- tapOn:
+    id: "standalone_item_gps"
+- takeScreenshot: tile_gps
+- back
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_otp"
+- tapOn:
+    id: "standalone_item_otp"
+- takeScreenshot: tile_otp

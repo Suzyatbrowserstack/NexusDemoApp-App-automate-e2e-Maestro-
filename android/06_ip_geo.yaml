@@ -1,0 +1,23 @@
+appId: com.demobank.app
+name: FR-7 IP geo location shows IP, country and language
+tags: [device-feature, geolocation]
+# BrowserStack: run once per region with the IP geolocation capability (FR, ES, other). See RUNBOOK.md
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_geo"
+- tapOn:
+    id: "standalone_item_geo"
+# Location permission dialog (shown on a fresh install)
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "hook_geo_ip_status"
+    timeout: 30000
+# Observed on device (no BrowserStack IP set): English, region United States.
+# Change the expectation per run region: FR -> French, ES -> Spanish.
+- assertVisible: "English \\(en\\)"
+- assertVisible: "IP: .* · Region: .*"

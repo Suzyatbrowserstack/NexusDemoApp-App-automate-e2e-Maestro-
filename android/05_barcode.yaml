@@ -1,0 +1,21 @@
+appId: com.demobank.app
+name: FR-6 Barcode scanner opens and can be cancelled
+tags: [device-feature, camera, barcode]
+# Decoding an injected QR needs enableCameraMediaInjection + an uploaded QR image
+# (see RUNBOOK.md). The spec's hook_barcode_* ids are NOT in this build, so this
+# flow covers only what was observed on device.
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_barcode"
+- tapOn:
+    id: "standalone_item_barcode"
+- assertVisible: "No barcode read yet"
+- tapOn: "Open barcode scanner"
+- tapOn:
+    text: "While using the app"
+    optional: true
+- assertVisible: "Point camera at a barcode or QR code"
+- tapOn: "Cancel"
+- assertVisible: "No barcode read yet"

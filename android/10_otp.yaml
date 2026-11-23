@@ -1,0 +1,32 @@
+appId: com.demobank.app
+name: FR-10 OTP test - phone, Send OTP, verify with fixed OTP 1234
+tags: [otp]
+env:
+  PHONE: "447990475676"
+  OTP: "1234"
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_otp"
+- tapOn:
+    id: "standalone_item_otp"
+# Observed on device: the phone field, Send OTP, OTP field and Verify OTP have
+# no resource ids, so they are targeted by their visible text.
+- assertVisible: "Verify Phone"
+- tapOn: "Phone Number"
+- inputText: ${PHONE}
+- hideKeyboard
+- assertVisible: "Will send SMS to \\+${PHONE} \\(UK\\)"
+- tapOn: "Send OTP"
+# The app may ask for the SMS permission here; allow it if shown.
+- tapOn:
+    text: "Allow"
+    optional: true
+- assertVisible: "Enter OTP"
+- tapOn: "OTP"
+- inputText: ${OTP}
+- hideKeyboard
+- tapOn: "Verify OTP"
+- assertVisible: "OTP verified"
+- assertVisible: "Code 1234 was accepted. This standalone test does not complete onboarding."

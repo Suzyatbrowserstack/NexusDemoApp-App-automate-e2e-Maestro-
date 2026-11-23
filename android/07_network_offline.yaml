@@ -1,0 +1,19 @@
+appId: com.demobank.app
+name: FR-8 Online network is reported with its measured speed
+tags: [device-feature, network]
+# The offline dialog (hook_network_offline_dialog) is not in this build and the
+# offline popup was not observed, so this flow checks the online state only.
+# Run it without a networkProfile.
+---
+- runFlow: ../subflows/open_hub.yaml
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_network"
+- tapOn:
+    id: "standalone_item_network"
+- assertVisible: "Network logs \\+ throttling"
+- assertVisible: "Online \\(.* kbps\\) — no low-network popup"
+- tapOn: "Fire network requests"
+- extendedWaitUntil:
+    visible: "POST reqres.in/api/login → 200"
+    timeout: 60000

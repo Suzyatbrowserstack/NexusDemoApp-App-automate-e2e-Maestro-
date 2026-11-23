@@ -1,0 +1,19 @@
+appId: com.demobank.app
+name: FR-2 Biometric prompt succeeds with BrowserStack biometric bypass
+tags: [device-feature, biometric]
+# BrowserStack: run with enableBiometric / biometric capability (see RUNBOOK.md)
+---
+- runFlow: ../subflows/open_hub.yaml
+- tapOn:
+    id: "standalone_item_biometric"
+- assertVisible:
+    id: "hook_biometric_prompt"
+- tapOn:
+    id: "hook_biometric_authorize"
+# Observed on device: BrowserStack shows a "Biometric Authentication" dialog
+# with CANCEL / FAIL / PASS (id android:id/button1 is PASS).
+- tapOn:
+    id: "android:id/button1"
+- extendedWaitUntil:
+    visible: "Biometric success"
+    timeout: 15000
