@@ -1,4 +1,5 @@
 name: Maestro on BrowserStack App Automate (with App Accessibility)
+
 on:
   push:
     branches: [main]
@@ -6,38 +7,61 @@ on:
   workflow_dispatch:
     inputs:
       app_url:
-        description: "Optional bs:// app id. Leave empty to upload the APK from APP_PATH."
+        description: "Optional bs:// app id. Leave empty to use the APP_URL secret / upload the APK from APP_PATH."
         required: false
         default: ""
+
+# Non-secret settings only. Anything that comes from the GA environment
+# (secrets or variables) must be set at JOB level, see below.
 env:
-  # Secrets: Settings > Secrets and variables > Actions
-  BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
-  BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
-  # Variables: Settings > Secrets and variables > Actions > Variables (optional)
-  # APP_URL: an existing bs:// id on THIS account. If empty, the APK at APP_PATH is uploaded.
-  APP_URL: ${{ github.event.inputs.app_url || vars.BROWSERSTACK_APP_URL }}
   APP_PATH: app/NexusDemo-videofix.apk
   DEVICE: "Samsung Galaxy S23-13.0"
   PROJECT_NAME: "NexusDemo A11y"
   WCAG_VERSION: "wcag22aa"
   API: https://api-cloud.browserstack.com/app-automate/maestro/v2
-  # Optional media ids (upload once, store as repo variables) for camera injection flows
-  IMAGE_MEDIA_ID: ${{ vars.BROWSERSTACK_IMAGE_MEDIA_ID }}
-  QR_MEDIA_ID: ${{ vars.BROWSERSTACK_QR_MEDIA_ID }}
+
+# Only cancel superseded runs on pull requests. On main / manual runs, let them finish.
 concurrency:
   group: maestro-a11y-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   maestro-a11y:
     runs-on: ubuntu-latest
+    environment: GA          # required: your secrets live in the GA environment
     timeout-minutes: 90
-    environment : GA
+    env:
+      BROWSERSTACK_USERNAME: ${{ secrets.BROWSERSTACK_USERNAME }}
+      BROWSERSTACK_ACCESS_KEY: ${{ secrets.BROWSERSTACK_ACCESS_KEY }}
+      # Priority: manual input > APP_URL secret > BROWSERSTACK_APP_URL variable
+      APP_URL: ${{ github.event.inputs.app_url || secrets.APP_URL || vars.BROWSERSTACK_APP_URL }}
+      # Optional media ids for camera injection flows (environment or repo variables)
+      IMAGE_MEDIA_ID: ${{ vars.BROWSERSTACK_IMAGE_MEDIA_ID }}
+      QR_MEDIA_ID: ${{ vars.BROWSERSTACK_QR_MEDIA_ID }}
+
     steps:
+      # Sparse checkout: only fetch what the workflow uses, so big files elsewhere
+      # in the repo (videos, media, etc.) don't slow this step down.
       - uses: actions/checkout@v4
+        timeout-minutes: 5
+        with:
+          fetch-depth: 1
+          lfs: false
+          sparse-checkout: |
+            .maestro
+            app
+          sparse-checkout-cone-mode: true
+
       - name: Check credentials
         run: |
-          test -n "$BROWSERSTACK_USERNAME" || { echo "::error::Secret BROWSERSTACK_USERNAME is not set"; exit 1; }
-          test -n "$BROWSERSTACK_ACCESS_KEY" || { echo "::error::Secret BROWSERSTACK_ACCESS_KEY is not set"; exit 1; }
+          test -n "$BROWSERSTACK_USERNAME" || { echo "::error::BROWSERSTACK_USERNAME is empty (is the job using environment GA?)"; exit 1; }
+          test -n "$BROWSERSTACK_ACCESS_KEY" || { echo "::error::BROWSERSTACK_ACCESS_KEY is empty (is the job using environment GA?)"; exit 1; }
+          if [ -n "$APP_URL" ]; then
+            echo "Using app: $APP_URL"
+          else
+            echo "APP_URL is empty, will upload APK from $APP_PATH"
+          fi
+
       - name: Upload app (only if APP_URL is not provided)
         id: app
         run: |
@@ -50,6 +74,7 @@ jobs:
             -X POST "$API/app" -F "file=@$APP_PATH")
           url=$(echo "$res" | python3 -c 'import sys,json;print(json.load(sys.stdin)["app_url"])')
           echo "app_url=$url" >> "$GITHUB_OUTPUT"
+
       - name: Zip and upload Maestro suite
         id: suite
         run: |
@@ -61,21 +86,27 @@ jobs:
             -X POST "$API/test-suite" -F "file=@suite/flows.zip")
           url=$(echo "$res" | python3 -c 'import sys,json;print(json.load(sys.stdin)["test_suite_url"])')
           echo "suite_url=$url" >> "$GITHUB_OUTPUT"
+
       - name: Run all flows with App Accessibility, one build per capability group
         env:
           APP: ${{ steps.app.outputs.app_url }}
           SUITE: ${{ steps.suite.outputs.suite_url }}
         run: |
           python3 - <<'PY'
-          import json, os, subprocess, sys, time, urllib.request, base64
+          import json, os, sys, time, urllib.request, base64
+
           user, key = os.environ["BROWSERSTACK_USERNAME"], os.environ["BROWSERSTACK_ACCESS_KEY"]
           api = os.environ["API"]
           auth = "Basic " + base64.b64encode(f"{user}:{key}".encode()).decode()
+
           def call(method, url, body=None):
-              req = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None,
-                                           headers={"Authorization": auth, "Content-Type": "application/json"})
+              req = urllib.request.Request(
+                  url, method=method,
+                  data=json.dumps(body).encode() if body else None,
+                  headers={"Authorization": auth, "Content-Type": "application/json"})
               with urllib.request.urlopen(req, timeout=60) as r:
                   return json.load(r)
+
           base = {
               "app": os.environ["APP"],
               "testSuite": os.environ["SUITE"],
@@ -91,18 +122,21 @@ jobs:
                   "includeIssueType": {"bestPractice": True, "needsReview": False},
               },
           }
+
           # Each group needs its own build because device capabilities differ per group.
           groups = [
-              ("core", ["android/00_explore.yaml", "android/01_hub_tiles.yaml", "android/04_file_upload_download.yaml",
-                        "android/06_ip_geo.yaml", "android/07_network_offline.yaml", "android/10_otp.yaml",
-                        "android/11_hub_navigation.yaml", "android/14_deeplink.yaml", "android/15_otp_negative.yaml",
-                        "android/17_audio_record_play.yaml"], {}),
+              ("core", ["android/00_explore.yaml", "android/01_hub_tiles.yaml",
+                        "android/04_file_upload_download.yaml", "android/06_ip_geo.yaml",
+                        "android/07_network_offline.yaml", "android/10_otp.yaml",
+                        "android/11_hub_navigation.yaml", "android/14_deeplink.yaml",
+                        "android/15_otp_negative.yaml", "android/17_audio_record_play.yaml"], {}),
               ("biometric", ["android/03_biometric.yaml", "android/12_biometric_negative.yaml"],
                {"enableBiometric": True}),
               ("network-low", ["android/08_network_low.yaml"], {"networkProfile": "2g-gprs-lossy"}),
               ("gps", ["android/09_gps.yaml"], {"gpsLocation": "48.8566,2.3522"}),
               ("video", ["android/16_video_record_play.yaml"], {"enableCameraImageInjection": True}),
           ]
+
           if os.environ.get("IMAGE_MEDIA_ID"):
               groups.append(("image-injection", ["android/02_image_injection.yaml"],
                              {"enableCameraImageInjection": True,
@@ -110,19 +144,22 @@ jobs:
           else:
               print("::warning::IMAGE_MEDIA_ID not set, 02_image_injection runs in the core group without injection")
               groups[0][1].append("android/02_image_injection.yaml")
+
           if os.environ.get("QR_MEDIA_ID"):
               groups.append(("barcode", ["android/05_barcode.yaml", "android/13_barcode_decode.yaml"],
                              {"enableCameraImageInjection": True,
                               "cameraInjectionMedia": "media://" + os.environ["QR_MEDIA_ID"]}))
           else:
               print("::warning::QR_MEDIA_ID not set, barcode flows run in the core group without injection")
-              groups[0][1] += ["android/05_barcode.yaml", "android/13_barcode_decode.yaml"]
+              groups[0][1].extend(["android/05_barcode.yaml", "android/13_barcode_decode.yaml"])
+
           builds = {}
           for name, flows, extra in groups:
               body = {**base, **extra, "execute": flows, "project": f'{base["project"]} - {name}'}
               res = call("POST", f"{api}/android/build", body)
               builds[name] = res["build_id"]
               print(f"started {name}: {res['build_id']}")
+
           deadline = time.time() + 80 * 60
           done = {}
           while len(done) < len(builds) and time.time() < deadline:
@@ -133,6 +170,7 @@ jobs:
                   b = call("GET", f"{api}/builds/{bid}")
                   if b.get("status") not in ("running", "queued"):
                       done[name] = b
+
           failed = False
           for name, bid in builds.items():
               b = done.get(name)
@@ -143,14 +181,17 @@ jobs:
                       for s in dev.get("sessions", []):
                           for g in (s.get("testcases") or {}).get("data", []):
                               for t in g.get("testcases", []):
-                                  print(f"   {t.get('status'):7} {t.get('name')}")
+                                  print(f"   {str(t.get('status')):7} {t.get('name')}")
               if status != "passed":
                   failed = True
+
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as f:
               f.write("## Maestro + App Accessibility on BrowserStack\n\n| Group | Status | Build |\n|---|---|---|\n")
               for name, bid in builds.items():
-                  f.write(f"| {name} | {done[name].get('status') if name in done else 'timed out'} | `{bid}` |\n")
+                  st = done[name].get("status") if name in done else "timed out"
+                  f.write(f"| {name} | {st} | `{bid}` |\n")
               f.write("\nAccessibility reports: BrowserStack App Accessibility dashboard, projects named "
                       f"`{base['project']} - <group>`.\n")
+
           sys.exit(1 if failed else 0)
           PY
