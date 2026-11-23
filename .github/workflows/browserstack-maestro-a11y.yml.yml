@@ -30,6 +30,7 @@ concurrency:
 jobs:
   maestro-a11y:
     runs-on: ubuntu-latest
+    environment: GA
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
