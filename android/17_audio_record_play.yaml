@@ -1,0 +1,34 @@
+appId: com.demobank.app
+name: FR-5 Audio injection - record, stop and play back
+tags: [device-feature, audio]
+# BrowserStack: run with audio injection enabled and injected audio to hear real content (see RUNBOOK.md).
+# Without injection the recording is still made and played back, which is all this flow asserts.
+---
+- runFlow: ../subflows/open_hub.yaml
+- tapOn:
+    id: "standalone_item_audio"
+- assertVisible: "Audio injection test"
+- assertVisible: "Tap record, inject audio in BrowserStack, then play it back."
+- tapOn: "Record"
+# Microphone permission dialog (shown on a fresh install)
+- tapOn:
+    id: "com.android.permissioncontroller:id/permission_allow_foreground_only_button"
+    optional: true
+# If the permission dialog consumed the first tap, start recording again
+- runFlow:
+    when:
+      visible: "Record"
+    commands:
+      - tapOn: "Record"
+- extendedWaitUntil:
+    visible: "Stop recording"
+    timeout: 15000
+- assertVisible: "Mic level"
+- tapOn: "Stop recording"
+- extendedWaitUntil:
+    visible: "Recorded.*"
+    timeout: 15000
+- tapOn: "Play recording"
+- extendedWaitUntil:
+    visible: "Playing recording.*"
+    timeout: 10000

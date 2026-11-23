@@ -1,0 +1,100 @@
+appId: com.demobank.app
+name: FR-11 Every hub tile opens its screen and back returns to the hub
+tags: [hub, smoke]
+---
+- runFlow: ../subflows/open_hub.yaml
+# Image
+- tapOn:
+    id: "standalone_item_image"
+- assertVisible: "Image injection"
+- back
+- assertVisible:
+    id: "standalone_item_image"
+# Biometric
+- tapOn:
+    id: "standalone_item_biometric"
+- assertVisible:
+    id: "hook_biometric_prompt"
+- back
+- assertVisible:
+    id: "standalone_item_biometric"
+# Video
+- tapOn:
+    id: "standalone_item_video"
+- assertVisible: "Video injection.*"
+- back
+- assertVisible:
+    id: "standalone_item_video"
+# Files
+- tapOn:
+    id: "standalone_item_files"
+- assertVisible:
+    id: "hook_file_download"
+- back
+- assertVisible:
+    id: "standalone_item_files"
+# Audio (observed screen title and buttons)
+- tapOn:
+    id: "standalone_item_audio"
+- assertVisible: "Audio injection test"
+- assertVisible: "Record"
+- back
+- assertVisible:
+    id: "standalone_item_audio"
+# Barcode
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_barcode"
+- tapOn:
+    id: "standalone_item_barcode"
+- assertVisible: "No barcode read yet"
+- back
+- assertVisible:
+    id: "standalone_item_barcode"
+# Geo
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_geo"
+- tapOn:
+    id: "standalone_item_geo"
+- tapOn:
+    text: "While using the app"
+    optional: true
+- assertVisible:
+    id: "hook_geo_ip_status"
+- back
+- assertVisible:
+    id: "standalone_item_geo"
+# Network
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_network"
+- tapOn:
+    id: "standalone_item_network"
+- assertVisible: "Network logs \\+ throttling"
+- back
+- assertVisible:
+    id: "standalone_item_network"
+# GPS
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_gps"
+- tapOn:
+    id: "standalone_item_gps"
+- tapOn:
+    text: "While using the app"
+    optional: true
+- assertVisible: "GPS test"
+- back
+- assertVisible:
+    id: "standalone_item_gps"
+# OTP
+- scrollUntilVisible:
+    element:
+      id: "standalone_item_otp"
+- tapOn:
+    id: "standalone_item_otp"
+- assertVisible: "Verify Phone"
+- back
+- assertVisible:
+    id: "standalone_item_otp"

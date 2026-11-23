@@ -1,0 +1,40 @@
+appId: com.demobank.app
+name: FR-3 Video injection - record, stop and save, play and restart
+tags: [device-feature, camera, video]
+# BrowserStack: run with camera media injection and an uploaded MP4 to inject a real clip (see RUNBOOK.md).
+# Without injection the clip is still recorded and saved, which is all this flow asserts.
+---
+- runFlow: ../subflows/open_hub.yaml
+- tapOn:
+    id: "standalone_item_video"
+- assertVisible: "Video injection"
+- assertVisible: "No file selected"
+- tapOn:
+    id: "hook_video_open_camera"
+# Camera and microphone permission dialogs (shown on a fresh install)
+- tapOn:
+    text: "While using the app"
+    optional: true
+- tapOn:
+    text: "While using the app"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "hook_video_feed_status"
+    timeout: 20000
+- assertVisible: "Start Recording"
+- tapOn:
+    id: "hook_video_record"
+- assertVisible: "Stop & Save"
+- assertVisible: "● REC.*"
+- tapOn:
+    id: "hook_video_record"
+- extendedWaitUntil:
+    visible: "Recorded clip ready to play"
+    timeout: 20000
+# Play toggles to Pause; Restart returns it to Play
+- assertVisible: "Play"
+- tapOn: "Play"
+- assertVisible: "Pause"
+- tapOn: "Restart"
+- assertVisible: "Play"
