@@ -32,6 +32,7 @@ jobs:
   maestro-a11y:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    environment : GA
     steps:
       - uses: actions/checkout@v4
       - name: Check credentials
