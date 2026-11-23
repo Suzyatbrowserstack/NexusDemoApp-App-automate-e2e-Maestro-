@@ -1,4 +1,3 @@
-.github/workflows/browserstack-maestro-a11y.yml
 name: Maestro on BrowserStack App Automate (with App Accessibility)
 on:
   push:
